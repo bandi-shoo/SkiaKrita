@@ -1,0 +1,73 @@
+# SkiaKrita – Roadmap & Next Steps
+# Updated: PR #1 Bootstrap
+
+current_state:
+  description: >
+    Initial repository bootstrap complete.
+    Three-project solution builds on Windows (VS2026, x64).
+    Minimal Skia raster surface creation, test-pattern drawing, PNG export.
+  milestone: "PR #1 – Repository Bootstrap"
+  implemented:
+    - "Solution structure: apps/krita_shell, libs/core, libs/graphics_skia"
+    - "vcpkg manifest mode with Skia dependency"
+    - "Directory.Build.props for shared build settings (C++20, /W4, Unicode)"
+    - "SkiaContext: raster surface, test pattern draw, PNG snapshot"
+    - "core::Version compile-time and run-time info"
+    - "UML documentation (PlantUML .puml) + Python SVG generator"
+    - "README with build / UML / directory docs"
+
+next_task_candidates:
+  - id: core-document-model
+    title: "Design core Document / Layer / Canvas model"
+    description: >
+      Define fundamental types in libs/core: Document, Layer (raster, vector, group),
+      Canvas viewport.  All pure C++20, no platform deps.
+    priority: high
+
+  - id: skia-wrapper-expand
+    title: "Expand SkiaContext rendering API"
+    description: >
+      Add brush-stroke rendering, layer compositing, blend modes.
+      Keep public API platform-independent.
+    priority: high
+
+  - id: render-tests
+    title: "Pixel-level rendering regression tests"
+    description: >
+      Golden-image based tests: render known scenes, compare output PNGs
+      against reference images.  Integrate with CTest or VS Test Explorer.
+    priority: medium
+
+  - id: ci-pipeline
+    title: "GitHub Actions CI (Windows)"
+    description: >
+      Automated build + test on push/PR.  vcpkg binary caching for speed.
+    priority: medium
+
+  - id: input-abstraction
+    title: "Tablet / stylus input abstraction"
+    description: >
+      Platform-independent input layer in libs/core for pressure, tilt, etc.
+      Windows implementation via WM_POINTER / Ink API.
+    priority: medium
+
+  - id: gui-shell-win32
+    title: "Win32 window shell with Skia rendering"
+    description: >
+      Replace console shell with a minimal Win32 HWND that hosts a
+      Skia raster or GPU surface.  Keep GUI code isolated in apps/.
+    priority: low
+
+  - id: macos-port
+    title: "macOS build & shell (Cocoa / Metal)"
+    description: >
+      Verify libs/core and libs/graphics_skia compile on macOS (Clang).
+      Add a Cocoa application shell in apps/.
+    priority: low
+
+definition_of_done:
+  - "All projects build cleanly (VS2026, x64, Debug & Release, /W4, zero warnings)"
+  - "krita_shell runs and produces expected console output"
+  - "Unit / rendering tests pass (when added)"
+  - "UML diagrams (.puml) reflect current implementation"
+  - "README is up to date with build and usage instructions"

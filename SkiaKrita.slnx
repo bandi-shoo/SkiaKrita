@@ -1,0 +1,14 @@
+<Solution>
+  <Configurations>
+    <Platform Name="x64" />
+  </Configurations>
+
+  <Folder Name="/libs/">
+    <Project Path="libs/core/core.vcxproj" Id="B7E51A38-4D2C-46F9-8C3A-1A5D7E9F0B2C" />
+    <Project Path="libs/graphics_skia/graphics_skia.vcxproj" Id="C8F62B49-5E3D-47A0-9D4B-2B6E8F0A1C3D" />
+  </Folder>
+
+  <Folder Name="/apps/">
+    <Project Path="apps/krita_shell/krita_shell.vcxproj" Id="D9A73C5A-6F4E-48B1-AE5C-3C7F9A1B2D4E" />
+  </Folder>
+</Solution>

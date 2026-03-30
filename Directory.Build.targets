@@ -1,0 +1,64 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!--
+  Directory.Build.targets – post-import settings applied after vcpkg.targets.
+  Adds Skia-specific include paths and compile definitions that the vcpkg
+  MSBuild integration does not inject automatically (CMake-only metadata).
+-->
+<Project xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
+
+  <!--
+    Explicit vcpkg MSBuild targets import (pairs with vcpkg.props in
+    Directory.Build.props).  Condition prevents double-import when
+    'vcpkg integrate install' is also active.
+  -->
+  <Import Project="$(VcpkgRoot)\scripts\buildsystems\msbuild\vcpkg.targets"
+          Condition="Exists('$(VcpkgRoot)\scripts\buildsystems\msbuild\vcpkg.targets')
+                     and '$(VcpkgPropsImported)' == 'true'" />
+
+  <!--
+    Skia include path: vcpkg places Skia headers under include/skia/.
+    The vcpkg MSBuild integration adds only include/ to the search path,
+    so we must add the skia sub-directory explicitly.
+    We use $(Platform) (always "x64" in our configs) to build the triplet.
+  -->
+  <PropertyGroup>
+    <_SkiaVcpkgTriplet>$(Platform)-windows</_SkiaVcpkgTriplet>
+    <_SkiaIncludeDir>$(SkiaKritaRoot)vcpkg_installed\$(_SkiaVcpkgTriplet)\include\skia</_SkiaIncludeDir>
+  </PropertyGroup>
+
+  <ItemDefinitionGroup>
+    <ClCompile>
+      <AdditionalIncludeDirectories>$(_SkiaIncludeDir);%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
+    </ClCompile>
+  </ItemDefinitionGroup>
+
+  <!--
+    Skia compile definitions – must match the definitions used when the
+    vcpkg Skia binary was built to ensure ABI compatibility.
+    Shared definitions (Debug + Release):
+  -->
+  <PropertyGroup>
+    <_SkiaCommonDefs>SK_CODEC_DECODES_BMP;SK_CODEC_DECODES_WBMP;SK_ENABLE_PRECOMPILE;SK_GANESH;SK_GAMMA_APPLY_TO_A8;SK_DISABLE_LEGACY_NONCONST_SERIAL_PROCS;SK_ENABLE_AVX512_OPTS;SK_TYPEFACE_FACTORY_DIRECTWRITE;SK_FONTMGR_DIRECTWRITE_AVAILABLE;SK_FONTMGR_GDI_AVAILABLE;SK_CODEC_DECODES_ICO;SK_CODEC_DECODES_PNG;SK_CODEC_DECODES_PNG_WITH_LIBPNG;SK_CODEC_ENCODES_PNG;SK_CODEC_ENCODES_PNG_WITH_LIBPNG;SK_GL;SK_CODEC_ENCODES_JPEG;SK_CODEC_ENCODES_WEBP;SK_SUPPORT_XPS;SK_CODEC_DECODES_JPEG;SK_CODEC_DECODES_WEBP;SK_HAS_WUFFS_LIBRARY;SK_CODEC_DECODES_GIF;SK_XML</_SkiaCommonDefs>
+  </PropertyGroup>
+
+  <!-- Debug-specific Skia definitions -->
+  <ItemDefinitionGroup Condition="'$(Configuration)' == 'Debug'">
+    <ClCompile>
+      <PreprocessorDefinitions>$(_SkiaCommonDefs);SK_ALLOW_STATIC_GLOBAL_INITIALIZERS=1;SK_ENABLE_DUMP_GPU;%(PreprocessorDefinitions)</PreprocessorDefinitions>
+    </ClCompile>
+    <Link>
+      <AdditionalDependencies>FontSub.lib;Usp10.lib;%(AdditionalDependencies)</AdditionalDependencies>
+    </Link>
+  </ItemDefinitionGroup>
+
+  <!-- Release-specific Skia definitions -->
+  <ItemDefinitionGroup Condition="'$(Configuration)' == 'Release'">
+    <ClCompile>
+      <PreprocessorDefinitions>$(_SkiaCommonDefs);SK_DISABLE_TRACING;%(PreprocessorDefinitions)</PreprocessorDefinitions>
+    </ClCompile>
+    <Link>
+      <AdditionalDependencies>FontSub.lib;Usp10.lib;%(AdditionalDependencies)</AdditionalDependencies>
+    </Link>
+  </ItemDefinitionGroup>
+
+</Project>

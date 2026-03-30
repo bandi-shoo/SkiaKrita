@@ -3,6 +3,19 @@
 ##
 ## Get latest from https://github.com/github/gitignore/blob/main/VisualStudio.gitignore
 
+# ── SkiaKrita-specific ──────────────────────────────────────────
+# vcpkg installed packages (restored on build)
+vcpkg_installed/
+
+# UML generated output (regenerated via tools/uml/generate.py)
+docs/uml/out/
+
+# PlantUML JAR (downloaded locally, not committed)
+tools/uml/plantuml.jar
+
+# Test output images
+test_output.png
+
 # User-specific files
 *.rsuser
 *.suo

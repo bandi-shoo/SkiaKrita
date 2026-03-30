@@ -1,0 +1,28 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!--
+  Directory.Build.props – shared settings for every C++ project in the repo.
+  Imported automatically by MSBuild before each vcxproj.
+-->
+<Project xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
+
+  <!-- Solution-wide path so projects can reference each other -->
+  <PropertyGroup Label="SolutionPaths">
+    <SkiaKritaRoot>$(MSBuildThisFileDirectory)</SkiaKritaRoot>
+  </PropertyGroup>
+
+  <!-- vcpkg manifest mode – single vcpkg.json at repo root -->
+  <PropertyGroup Label="Vcpkg">
+    <VcpkgEnabled>true</VcpkgEnabled>
+    <VcpkgEnableManifest>true</VcpkgEnableManifest>
+    <VcpkgManifestRoot>$(SkiaKritaRoot)</VcpkgManifestRoot>
+  </PropertyGroup>
+
+  <!--
+    Explicit vcpkg MSBuild props import.
+    Works if VCPKG_ROOT is set (VS2026 bundled vcpkg, or standalone).
+    Falls back gracefully via 'vcpkg integrate install' user-wide import.
+  -->
+  <Import Project="$(VcpkgRoot)\scripts\buildsystems\msbuild\vcpkg.props"
+          Condition="Exists('$(VcpkgRoot)\scripts\buildsystems\msbuild\vcpkg.props')" />
+
+</Project>

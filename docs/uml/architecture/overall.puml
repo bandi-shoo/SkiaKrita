@@ -1,0 +1,54 @@
+@startuml SkiaKrita Target Architecture
+
+title SkiaKrita – Target Architecture (Goal)
+skinparam componentStyle rectangle
+skinparam packageStyle frame
+
+legend right
+  Pure C++20 = platform-independent
+  GUI shell  = platform-specific (swappable)
+endlegend
+
+package "Application Shell" <<platform-specific>> {
+    [krita_shell] <<Executable>>
+    note bottom of [krita_shell]
+      Windows : Win32 minimal window
+      macOS   : Cocoa / Metal (future)
+    end note
+}
+
+package "libs/core" <<Pure C++20>> {
+    [Document Model]
+    [Layer System]
+    [Brush Engine]
+    [Command / Undo]
+    [Selection]
+    [Color Management]
+}
+
+package "libs/graphics_skia" <<Pure C++20 interface>> {
+    [SkiaContext] <<public API>>
+    [Raster Backend] <<Skia impl>>
+    [GPU Backend]    <<Skia impl – future>>
+}
+
+package "External" {
+    [Skia] <<third-party>>
+}
+
+' ── relationships ──
+[krita_shell]    --> [Document Model]   : uses
+[krita_shell]    --> [SkiaContext]       : renders via
+
+[Document Model] --> [Layer System]
+[Document Model] --> [Command / Undo]
+[Brush Engine]   --> [SkiaContext]       : draw strokes
+[Selection]      --> [SkiaContext]       : mask rendering
+[Color Management] --> [SkiaContext]     : color spaces
+
+[SkiaContext]    --> [Raster Backend]
+[SkiaContext]    --> [GPU Backend]
+[Raster Backend] --> [Skia]
+[GPU Backend]    --> [Skia]
+
+@enduml

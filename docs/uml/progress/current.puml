@@ -1,0 +1,46 @@
+@startuml SkiaKrita Current Progress
+
+title SkiaKrita – Current Implementation (PR #1 Bootstrap)
+skinparam componentStyle rectangle
+skinparam packageStyle frame
+
+legend right
+  <color:green>██</color> Implemented
+  <color:gray>██</color> Planned (stub / empty)
+endlegend
+
+package "apps/krita_shell" {
+    [main.cpp] <<Executable>> #PaleGreen
+    note bottom of [main.cpp]
+      Console bootstrap.
+      Prints version, creates
+      Skia surface, draws test
+      pattern, saves PNG.
+    end note
+}
+
+package "libs/core" <<Pure C++20>> {
+    [Version] #PaleGreen
+    [Document Model] #LightGray
+    [Layer System]   #LightGray
+    [Brush Engine]   #LightGray
+}
+
+package "libs/graphics_skia" <<Pure C++20 interface>> {
+    [SkiaContext] #PaleGreen
+    note bottom of [SkiaContext]
+      createSurface()
+      drawTestPattern()
+      saveSnapshot()
+    end note
+}
+
+package "External" {
+    [Skia (vcpkg)] <<third-party>> #PaleGreen
+}
+
+[main.cpp] --> [Version]     : prints version
+[main.cpp] --> [SkiaContext]  : creates surface, draws, saves
+[SkiaContext] --> [Skia (vcpkg)]
+
+@enduml
