@@ -1,11 +1,12 @@
 @startuml SkiaKrita Current Progress
 
-title SkiaKrita – Current Implementation (PR #1 Bootstrap)
+title SkiaKrita – Current Implementation (PR #2 Core Model)
 skinparam componentStyle rectangle
 skinparam packageStyle frame
 
 legend right
   <color:green>██</color> Implemented
+  <color:yellow>██</color> Minimal / data-only
   <color:gray>██</color> Planned (stub / empty)
 endlegend
 
@@ -13,17 +14,22 @@ package "apps/krita_shell" {
     [main.cpp] <<Executable>> #PaleGreen
     note bottom of [main.cpp]
       Console bootstrap.
-      Prints version, creates
-      Skia surface, draws test
-      pattern, saves PNG.
+      Creates Document + Layers,
+      renders brush stroke via
+      Renderer, composites layers,
+      saves PNGs.
     end note
 }
 
 package "libs/core" <<Pure C++20>> {
-    [Version] #PaleGreen
-    [Document Model] #LightGray
-    [Layer System]   #LightGray
-    [Brush Engine]   #LightGray
+    [Version]          #PaleGreen
+    [Color]            #PaleGreen
+    [Document Model]   #PaleGreen
+    [Layer System]     #PaleGreen
+    [Brush Engine]     #PaleGreen
+    [Command / Undo]   #PaleGreen
+    [Selection]        #PaleGreen
+    [Color Management] #LightGray
 }
 
 package "libs/graphics_skia" <<Pure C++20 interface>> {
@@ -33,14 +39,35 @@ package "libs/graphics_skia" <<Pure C++20 interface>> {
       drawTestPattern()
       saveSnapshot()
     end note
+
+    [Renderer]   #PaleGreen
+    note bottom of [Renderer]
+      compositeDocument()
+      renderBrushStroke()
+      fillLayer()
+      saveComposite()
+    end note
 }
 
 package "External" {
     [Skia (vcpkg)] <<third-party>> #PaleGreen
 }
 
-[main.cpp] --> [Version]     : prints version
-[main.cpp] --> [SkiaContext]  : creates surface, draws, saves
-[SkiaContext] --> [Skia (vcpkg)]
+' ── relationships ──
+[main.cpp] --> [Version]        : prints version
+[main.cpp] --> [Document Model] : creates document
+[main.cpp] --> [Layer System]   : adds layers
+[main.cpp] --> [Brush Engine]   : builds stroke
+[main.cpp] --> [Command / Undo] : demo
+[main.cpp] --> [Selection]      : demo
+[main.cpp] --> [SkiaContext]    : test pattern
+[main.cpp] --> [Renderer]       : stroke + composite
+
+[Document Model] --> [Layer System]
+[Brush Engine]   --> [Color]
+[Layer System]   --> [Color]
+
+[Renderer]    --> [Skia (vcpkg)]
+[SkiaContext]  --> [Skia (vcpkg)]
 
 @enduml

@@ -58,7 +58,7 @@
       <SDLCheck>true</SDLCheck>
       <ConformanceMode>true</ConformanceMode>
       <LanguageStandard>stdcpp20</LanguageStandard>
-      <AdditionalIncludeDirectories>$(ProjectDir)include;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
+      <AdditionalIncludeDirectories>$(ProjectDir)include;$(SkiaKritaRoot)libs\core\include;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
     </ClCompile>
   </ItemDefinitionGroup>
 
@@ -80,9 +80,11 @@
   <!-- ── Sources ───────────────────────────────────────────────── -->
   <ItemGroup>
     <ClInclude Include="include\graphics_skia\skia_context.h" />
+    <ClInclude Include="include\graphics_skia\renderer.h" />
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="src\skia_context.cpp" />
+    <ClCompile Include="src\renderer.cpp" />
   </ItemGroup>
 
   <!-- ── Dependencies ──────────────────────────────────────────── -->

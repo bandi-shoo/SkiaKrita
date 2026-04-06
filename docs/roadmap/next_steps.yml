@@ -1,34 +1,36 @@
 # SkiaKrita – Roadmap & Next Steps
-# Updated: PR #1 Bootstrap
+# Updated: PR #2 Core Model
 
 current_state:
   description: >
-    Initial repository bootstrap complete.
-    Three-project solution builds on Windows (VS2026, x64).
-    Minimal Skia raster surface creation, test-pattern drawing, PNG export.
-  milestone: "PR #1 – Repository Bootstrap"
+    Core model implemented: Document, Layer, BrushStroke, Command/Undo,
+    Selection, Color types in libs/core (pure C++20).  Renderer in
+    libs/graphics_skia composites layers and renders brush strokes via Skia.
+    krita_shell demonstrates the full pipeline: create document → add layers
+    → brush stroke → composite → PNG export.
+  milestone: "PR #2 – Core Document Model & Renderer"
   implemented:
     - "Solution structure: apps/krita_shell, libs/core, libs/graphics_skia"
     - "vcpkg manifest mode with Skia dependency"
     - "Directory.Build.props for shared build settings (C++20, /W4, Unicode)"
     - "SkiaContext: raster surface, test pattern draw, PNG snapshot"
     - "core::Version compile-time and run-time info"
+    - "core::Color value type + BlendMode enum"
+    - "core::Layer with pixel buffer, visibility, opacity, blend mode (pimpl)"
+    - "core::Document with layer stack management (add, remove, move, active)"
+    - "core::BrushStroke / BrushSettings data model"
+    - "core::CommandHistory with undo/redo stacks"
+    - "core::Selection with rect selection and alpha mask"
+    - "graphics::Renderer: layer compositing, brush stroke rendering, PNG export"
     - "UML documentation (PlantUML .puml) + Python SVG generator"
     - "README with build / UML / directory docs"
 
 next_task_candidates:
-  - id: core-document-model
-    title: "Design core Document / Layer / Canvas model"
+  - id: color-management
+    title: "Color space / management in core"
     description: >
-      Define fundamental types in libs/core: Document, Layer (raster, vector, group),
-      Canvas viewport.  All pure C++20, no platform deps.
-    priority: high
-
-  - id: skia-wrapper-expand
-    title: "Expand SkiaContext rendering API"
-    description: >
-      Add brush-stroke rendering, layer compositing, blend modes.
-      Keep public API platform-independent.
+      Implement core::ColorSpace, ICC profile support, color-managed pipeline.
+      Integrate with SkiaContext color space handling.
     priority: high
 
   - id: render-tests
@@ -36,7 +38,21 @@ next_task_candidates:
     description: >
       Golden-image based tests: render known scenes, compare output PNGs
       against reference images.  Integrate with CTest or VS Test Explorer.
-    priority: medium
+    priority: high
+
+  - id: brush-engine-advanced
+    title: "Advanced brush engine features"
+    description: >
+      Pressure-dependent size/opacity, dab-based rendering (spacing),
+      soft/hard brush profiles, smudge brush.
+    priority: high
+
+  - id: command-implementations
+    title: "Concrete Command implementations"
+    description: >
+      BrushStrokeCommand (with pixel snapshot for undo), LayerAddCommand,
+      LayerRemoveCommand, etc.  Wire into CommandHistory.
+    priority: high
 
   - id: ci-pipeline
     title: "GitHub Actions CI (Windows)"
@@ -56,7 +72,7 @@ next_task_candidates:
     description: >
       Replace console shell with a minimal Win32 HWND that hosts a
       Skia raster or GPU surface.  Keep GUI code isolated in apps/.
-    priority: low
+    priority: medium
 
   - id: macos-port
     title: "macOS build & shell (Cocoa / Metal)"
