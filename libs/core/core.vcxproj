@@ -67,6 +67,7 @@
   </ItemDefinitionGroup>
   <!-- ── Sources ───────────────────────────────────────────────── -->
   <ItemGroup>
+    <ClInclude Include="include\core\brush_command.h" />
     <ClInclude Include="include\core\brush_engine.h" />
     <ClInclude Include="include\core\brush_tool.h" />
     <ClInclude Include="include\core\color.h" />
@@ -79,6 +80,7 @@
     <ClInclude Include="include\core\version.h" />
   </ItemGroup>
   <ItemGroup>
+    <ClCompile Include="src\brush_command.cpp" />
     <ClCompile Include="src\brush_engine.cpp" />
     <ClCompile Include="src\brush_tool.cpp" />
     <ClCompile Include="src\color.cpp" />

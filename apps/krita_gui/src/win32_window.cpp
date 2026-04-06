@@ -7,7 +7,7 @@
 
 namespace skiakrita::gui {
 
-// ── Pimpl ────────────────────────────────────────────────────────
+// -- Pimpl ----------------------------------------------------------------
 struct Win32Window::Impl {
     HWND            hwnd          = nullptr;
     int             clientW       = 0;
@@ -15,10 +15,11 @@ struct Win32Window::Impl {
     bool            lButtonDown   = false;
     PaintCallback   paintCb;
     MouseCallback   mouseCb;
+    KeyCallback     keyCb;
     ResizeCallback  resizeCb;
 };
 
-// ── Class registration (once) ────────────────────────────────────
+// -- Class registration (once) --------------------------------------------
 static constexpr const wchar_t* kClassName = L"SkiaKritaWindow";
 static bool sClassRegistered = false;
 
@@ -38,7 +39,7 @@ void Win32Window::ensureClassRegistered() {
     sClassRegistered = true;
 }
 
-// ── Lifetime ─────────────────────────────────────────────────────
+// -- Lifetime -------------------------------------------------------------
 Win32Window::Win32Window(int clientWidth, int clientHeight,
                          const wchar_t* title)
     : m_impl(std::make_unique<Impl>())
@@ -79,9 +80,10 @@ void Win32Window::invalidate() {
 
 void Win32Window::setPaintCallback (PaintCallback  cb) { m_impl->paintCb  = std::move(cb); }
 void Win32Window::setMouseCallback (MouseCallback  cb) { m_impl->mouseCb  = std::move(cb); }
+void Win32Window::setKeyCallback   (KeyCallback    cb) { m_impl->keyCb    = std::move(cb); }
 void Win32Window::setResizeCallback(ResizeCallback cb) { m_impl->resizeCb = std::move(cb); }
 
-// ── Message loop ─────────────────────────────────────────────────
+// -- Message loop ---------------------------------------------------------
 int Win32Window::runMessageLoop() {
     MSG msg{};
     while (GetMessageW(&msg, nullptr, 0, 0)) {
@@ -91,7 +93,33 @@ int Win32Window::runMessageLoop() {
     return static_cast<int>(msg.wParam);
 }
 
-// ── Window procedure ─────────────────────────────────────────────
+// -- Helpers (VK to core::Key) --------------------------------------------
+namespace {
+
+core::Key translateVirtualKey(WPARAM vk) {
+    switch (vk) {
+        case 'Z':       return core::Key::Z;
+        case 'Y':       return core::Key::Y;
+        case 'S':       return core::Key::S;
+        case 'N':       return core::Key::N;
+        case 'E':       return core::Key::E;
+        case VK_DELETE: return core::Key::Delete;
+        case VK_ESCAPE: return core::Key::Escape;
+        default:        return core::Key::None;
+    }
+}
+
+core::KeyModifiers getKeyModifiers() {
+    core::KeyModifiers m;
+    m.ctrl  = (GetKeyState(VK_CONTROL) & 0x8000) != 0;
+    m.shift = (GetKeyState(VK_SHIFT)   & 0x8000) != 0;
+    m.alt   = (GetKeyState(VK_MENU)    & 0x8000) != 0;
+    return m;
+}
+
+} // anonymous namespace
+
+// -- Window procedure -----------------------------------------------------
 LRESULT CALLBACK Win32Window::wndProc(HWND hwnd, UINT msg,
                                       WPARAM wp, LPARAM lp) {
     Win32Window* self = nullptr;
@@ -110,7 +138,7 @@ LRESULT CALLBACK Win32Window::wndProc(HWND hwnd, UINT msg,
 
     switch (msg) {
 
-    // ── Paint ────────────────────────────────────────────────────
+    // -- Paint ------------------------------------------------------------
     case WM_PAINT: {
         PAINTSTRUCT ps;
         HDC hdc = BeginPaint(hwnd, &ps);
@@ -121,7 +149,22 @@ LRESULT CALLBACK Win32Window::wndProc(HWND hwnd, UINT msg,
         return 0;
     }
 
-    // ── Mouse ────────────────────────────────────────────────────
+    // -- Keyboard ---------------------------------------------------------
+    case WM_KEYDOWN: {
+        if (self->m_impl->keyCb) {
+            core::Key key = translateVirtualKey(wp);
+            if (key != core::Key::None) {
+                core::KeyEvent ke;
+                ke.type = core::KeyEvent::Type::Press;
+                ke.key  = key;
+                ke.mods = getKeyModifiers();
+                self->m_impl->keyCb(ke);
+            }
+        }
+        return 0;
+    }
+
+    // -- Mouse ------------------------------------------------------------
     case WM_LBUTTONDOWN: {
         SetCapture(hwnd);
         self->m_impl->lButtonDown = true;
@@ -163,7 +206,7 @@ LRESULT CALLBACK Win32Window::wndProc(HWND hwnd, UINT msg,
         return 0;
     }
 
-    // ── Resize ───────────────────────────────────────────────────
+    // -- Resize -----------------------------------------------------------
     case WM_SIZE: {
         self->m_impl->clientW = LOWORD(lp);
         self->m_impl->clientH = HIWORD(lp);
@@ -173,7 +216,7 @@ LRESULT CALLBACK Win32Window::wndProc(HWND hwnd, UINT msg,
         return 0;
     }
 
-    // ── Close ────────────────────────────────────────────────────
+    // -- Close ------------------------------------------------------------
     case WM_DESTROY:
         PostQuitMessage(0);
         return 0;

@@ -1,13 +1,13 @@
 @startuml SkiaKrita Current Progress
 
-title SkiaKrita – Current Implementation (PR #3 Win32 GUI)
+title SkiaKrita -- Current Implementation (PR #4 Undo / Pressure / Keyboard)
 skinparam componentStyle rectangle
 skinparam packageStyle frame
 
 legend right
-  <color:green>██</color> Implemented
-  <color:yellow>██</color> Minimal / data-only
-  <color:gray>██</color> Planned (stub / empty)
+  <color:green>~~</color> Implemented
+  <color:yellow>~~</color> Minimal / data-only
+  <color:gray>~~</color> Planned (stub / empty)
 endlegend
 
 package "apps/krita_gui" <<Win32>> {
@@ -15,9 +15,10 @@ package "apps/krita_gui" <<Win32>> {
     [App]          <<controller>>    #PaleGreen
     [Win32Window]  <<HWND wrapper>>  #PaleGreen
     note bottom of [Win32Window]
-      WM_PAINT   → composite → StretchDIBits
-      WM_MOUSE*  → MouseEvent → BrushTool
-      WM_SIZE    → resize callback
+      WM_PAINT   -> composite -> StretchDIBits
+      WM_MOUSE*  -> MouseEvent -> BrushTool
+      WM_KEYDOWN -> KeyEvent -> App (Ctrl+Z/Y)
+      WM_SIZE    -> resize callback
     end note
 }
 
@@ -32,11 +33,13 @@ package "libs/core" <<Pure C++20>> {
     [Layer System]     #PaleGreen
     [Brush Engine]     #PaleGreen
     [Command / Undo]   #PaleGreen
+    [BrushStrokeCommand] #PaleGreen
     [Selection]        #PaleGreen
     [Color Management] #LightGray
 
     package "Input / Tool" {
         [MouseEvent]  #PaleGreen
+        [KeyEvent]    #PaleGreen
         [Tool]        #PaleGreen
         [BrushTool]   #PaleGreen
     }
@@ -48,7 +51,7 @@ package "libs/graphics_skia" <<Pure C++20 interface>> {
     note bottom of [Renderer]
       compositeDocument()
       getCompositeBuffer()
-      renderBrushStroke()
+      renderBrushStroke() -- pressure-sensitive
       fillLayer()
       saveComposite()
     end note
@@ -59,30 +62,37 @@ package "External" {
     [Win32 API]    <<OS>>          #PaleGreen
 }
 
-' ── GUI wiring ──
+' -- GUI wiring --
 [WinMain]      --> [App]            : creates
 [App]          --> [Win32Window]    : owns window
 [App]          --> [Document Model] : owns document
 [App]          --> [BrushTool]      : active tool
 [App]          --> [Renderer]       : composite + blit
+[App]          --> [Command / Undo] : CommandHistory
 
-' ── Event flow ──
-[Win32Window]  ..> [MouseEvent]     : translates WM_* →
+' -- Event flow --
+[Win32Window]  ..> [MouseEvent]     : translates WM_MOUSE* ->
+[Win32Window]  ..> [KeyEvent]       : translates WM_KEYDOWN ->
 [App]          --> [Tool]           : dispatches events
 
-' ── CLI shell ──
+' -- Undo pipeline --
+[BrushTool]    ..> [BrushStrokeCommand] : creates on release
+[BrushStrokeCommand] --|> [Command / Undo] : extends Command
+[App]          --> [Command / Undo] : Ctrl+Z / Ctrl+Y
+
+' -- CLI shell --
 [main.cpp]     --> [Document Model] : creates document
 [main.cpp]     --> [SkiaContext]    : test pattern
 [main.cpp]     --> [Renderer]       : stroke + composite
 
-' ── Rendering pipeline ──
+' -- Rendering pipeline --
 [BrushTool]    --> [Brush Engine]   : builds strokes
 [Renderer]     --> [Document Model] : reads layers
 [Renderer]     --> [Skia (vcpkg)]   : raster ops
 [SkiaContext]  --> [Skia (vcpkg)]
 [Win32Window]  --> [Win32 API]      : StretchDIBits
 
-' ── Core relationships ──
+' -- Core relationships --
 [Document Model] --> [Layer System]
 [BrushTool]      --|> [Tool]
 [Tool]           --> [MouseEvent]

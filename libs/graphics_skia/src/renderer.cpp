@@ -1,5 +1,5 @@
 /// @file renderer.cpp
-/// @brief Renderer implementation – all Skia headers confined here.
+/// @brief Renderer implementation -- all Skia headers confined here.
 
 #include "graphics_skia/renderer.h"
 
@@ -23,7 +23,7 @@
 
 namespace skiakrita::graphics {
 
-// ── Helpers (anonymous namespace) ────────────────────────────────
+// -- Helpers (anonymous namespace) ----------------------------------------
 namespace {
 
 SkBlendMode toSkBlendMode(core::BlendMode mode) {
@@ -42,20 +42,20 @@ SkBlendMode toSkBlendMode(core::BlendMode mode) {
 
 } // anonymous namespace
 
-// ── Pimpl ────────────────────────────────────────────────────────
+// -- Pimpl ----------------------------------------------------------------
 struct Renderer::Impl {
     sk_sp<SkSurface> compositeSurface;
     int width  = 0;
     int height = 0;
 };
 
-// ── Lifetime ─────────────────────────────────────────────────────
+// -- Lifetime -------------------------------------------------------------
 Renderer::Renderer()  : m_impl(std::make_unique<Impl>()) {}
 Renderer::~Renderer()                                    = default;
 Renderer::Renderer(Renderer&&) noexcept                  = default;
 Renderer& Renderer::operator=(Renderer&&) noexcept       = default;
 
-// ── Compositing ──────────────────────────────────────────────────
+// -- Compositing ----------------------------------------------------------
 bool Renderer::compositeDocument(const core::Document& doc) {
     const int w = doc.width();
     const int h = doc.height();
@@ -97,7 +97,7 @@ bool Renderer::compositeDocument(const core::Document& doc) {
     return true;
 }
 
-// ── Composite buffer access ──────────────────────────────────────
+// -- Composite buffer access ----------------------------------------------
 CompositeBuffer Renderer::getCompositeBuffer() const {
     CompositeBuffer buf;
     if (!m_impl->compositeSurface) return buf;
@@ -112,7 +112,7 @@ CompositeBuffer Renderer::getCompositeBuffer() const {
     return buf;
 }
 
-// ── Brush stroke rendering ───────────────────────────────────────
+// -- Brush stroke rendering (pressure-sensitive) --------------------------
 void Renderer::renderBrushStroke(core::Layer& layer,
                                  const core::BrushStroke& stroke) {
     if (stroke.empty()) return;
@@ -136,7 +136,6 @@ void Renderer::renderBrushStroke(core::Layer& layer,
         static_cast<uint8_t>(s.opacity * 255.f),
         s.color.r, s.color.g, s.color.b));
     paint.setStrokeCap(SkPaint::kRound_Cap);
-    paint.setStrokeJoin(SkPaint::kRound_Join);
     paint.setStyle(SkPaint::kStroke_Style);
 
     if (stroke.points.size() == 1) {
@@ -146,22 +145,23 @@ void Renderer::renderBrushStroke(core::Layer& layer,
             stroke.points[0].x, stroke.points[0].y,
             s.size * 0.5f * stroke.points[0].pressure, paint);
     } else {
-        paint.setStrokeWidth(s.size);
-        SkPath path;
-        path.moveTo(stroke.points[0].x, stroke.points[0].y);
+        // Per-segment rendering with pressure-sensitive width
         for (std::size_t i = 1; i < stroke.points.size(); ++i) {
-            path.lineTo(stroke.points[i].x, stroke.points[i].y);
+            const auto& p0 = stroke.points[i - 1];
+            const auto& p1 = stroke.points[i];
+            const float avgPressure = (p0.pressure + p1.pressure) * 0.5f;
+            paint.setStrokeWidth(s.size * avgPressure);
+            canvas->drawLine(p0.x, p0.y, p1.x, p1.y, paint);
         }
-        canvas->drawPath(path, paint);
     }
 }
 
-// ── Fill ─────────────────────────────────────────────────────────
+// -- Fill -----------------------------------------------------------------
 void Renderer::fillLayer(core::Layer& layer, const core::Color& color) {
     layer.clear(color);
 }
 
-// ── Export ────────────────────────────────────────────────────────
+// -- Export ----------------------------------------------------------------
 bool Renderer::saveComposite(const std::string& filePath) {
     if (!m_impl->compositeSurface) return false;
 

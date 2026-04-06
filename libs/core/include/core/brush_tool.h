@@ -4,6 +4,7 @@
 
 #include <core/tool.h>
 #include <core/brush_engine.h>
+#include <core/command.h>
 
 #include <functional>
 #include <memory>
@@ -20,7 +21,8 @@ class Layer;
 class BrushTool : public Tool {
 public:
     /// Called for each new segment that needs rendering.
-    using RenderCallback = std::function<void(Layer&, const BrushStroke&)>;
+    using RenderCallback  = std::function<void(Layer&, const BrushStroke&)>;
+    using CommandCallback = std::function<void(std::unique_ptr<Command>)>;
 
     BrushTool();
     ~BrushTool() override;
@@ -44,6 +46,7 @@ public:
 
     /// Set the callback invoked for each new stroke segment.
     void setRenderCallback(RenderCallback cb);
+    void setCommandCallback(CommandCallback cb);
 
 private:
     struct Impl;

@@ -1,37 +1,37 @@
-# SkiaKrita – Roadmap & Next Steps
-# Updated: PR #3 Win32 GUI
+# SkiaKrita -- Roadmap & Next Steps
+# Updated: PR #4 Undo / Pressure / Keyboard
 
 current_state:
   description: >
-    Win32 GUI shell fully wired.  krita_gui opens an 800×600 window,
-    composites the Document via Renderer, blits via StretchDIBits.
-    Mouse events translate to MouseEvent → BrushTool → real-time
-    brush strokes on the active layer.  Core model (Document, Layer,
-    BrushStroke, Command/Undo, Selection, Tool, BrushTool) is pure
-    C++20.  All Skia usage confined to graphics_skia (pimpl).
-  milestone: "PR #3 – Win32 GUI Shell"
+    Undo/Redo pipeline fully wired.  BrushTool snapshots layer pixels
+    on press, creates BrushStrokeCommand on release, pushes to
+    CommandHistory via callback.  Ctrl+Z / Ctrl+Y in krita_gui invoke
+    undo/redo.  Brush stroke rendering is pressure-sensitive (per-segment
+    width = brush size * average pressure).  Keyboard events translated
+    via WM_KEYDOWN -> KeyEvent -> App.
+  milestone: "PR #4 -- Undo / Pressure / Keyboard"
   implemented:
-    - "apps/krita_gui: WinMain, App controller, Win32Window (HWND wrapper)"
-    - "Win32Window: WM_PAINT → composite blit, WM_MOUSE → BrushTool, WM_SIZE"
-    - "core::MouseEvent, core::Tool (abstract), core::BrushTool (concrete)"
-    - "BrushTool: per-segment RenderCallback → Renderer::renderBrushStroke"
-    - "Renderer::getCompositeBuffer() zero-copy pixel view for StretchDIBits"
-    - "gui.puml: GUI-specific architecture diagram"
-    - "apps/krita_shell: console pipeline demo (unchanged)"
-    - "All previous core + graphics_skia implementations"
+    - "core::BrushStrokeCommand: pixel-snapshot undo/redo for brush strokes"
+    - "core::KeyEvent, KeyModifiers, Key enum in input_event.h"
+    - "BrushTool: CommandCallback -- pushes BrushStrokeCommand on stroke end"
+    - "BrushTool: pixel snapshot before drawing, captureAfter on release"
+    - "Win32Window: WM_KEYDOWN handler, VK->Key translation, KeyCallback"
+    - "App: core::CommandHistory, Ctrl+Z=undo, Ctrl+Y=redo + invalidate"
+    - "Renderer::renderBrushStroke: per-segment pressure-sensitive width"
+    - "All previous core + graphics_skia + GUI implementations"
 
 next_task_candidates:
-  - id: command-implementations
-    title: "Concrete Command implementations + wired undo"
+  - id: additional-commands
+    title: "Additional Command implementations"
     description: >
-      BrushStrokeCommand (pixel snapshot for undo), LayerAddCommand,
-      LayerRemoveCommand.  Wire Ctrl+Z / Ctrl+Y in krita_gui.
+      LayerAddCommand, LayerRemoveCommand, LayerReorderCommand.
+      Generic property-change commands for layer opacity/visibility.
     priority: high
 
   - id: brush-engine-advanced
     title: "Advanced brush engine features"
     description: >
-      Pressure-dependent size/opacity, dab-based rendering (spacing),
+      Pressure-dependent opacity, dab-based rendering (spacing),
       soft/hard brush profiles, smudge brush.
     priority: high
 

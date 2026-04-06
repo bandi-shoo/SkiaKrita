@@ -18,4 +18,23 @@ struct MouseEvent {
     MouseButton button   = MouseButton::None;
 };
 
+/// Keyboard modifier flags.
+struct KeyModifiers {
+    bool ctrl  = false;
+    bool shift = false;
+    bool alt   = false;
+};
+
+/// Virtual key identifiers (extend as needed).
+enum class Key { None, Z, Y, S, N, E, Delete, Escape };
+
+/// A single keyboard event.
+struct KeyEvent {
+    enum class Type { Press, Release };
+
+    Type         type = Type::Press;
+    Key          key  = Key::None;
+    KeyModifiers mods;
+};
+
 } // namespace skiakrita::core

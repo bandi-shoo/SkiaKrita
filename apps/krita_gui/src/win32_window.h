@@ -1,6 +1,6 @@
 #pragma once
 /// @file win32_window.h
-/// @brief Minimal Win32 window wrapper with paint / mouse / resize callbacks.
+/// @brief Minimal Win32 window wrapper with paint / mouse / key / resize callbacks.
 
 #ifndef WIN32_LEAN_AND_MEAN
 #define WIN32_LEAN_AND_MEAN
@@ -30,13 +30,15 @@ public:
     void show();
     void invalidate();
 
-    // ── Callbacks ────────────────────────────────────────────────
+    // -- Callbacks --------------------------------------------------------
     using PaintCallback  = std::function<void(HDC hdc, int w, int h)>;
     using MouseCallback  = std::function<void(const core::MouseEvent&)>;
+    using KeyCallback    = std::function<void(const core::KeyEvent&)>;
     using ResizeCallback = std::function<void(int w, int h)>;
 
     void setPaintCallback (PaintCallback  cb);
     void setMouseCallback (MouseCallback  cb);
+    void setKeyCallback   (KeyCallback    cb);
     void setResizeCallback(ResizeCallback cb);
 
     /// Enter the Win32 message loop (blocks until WM_QUIT).

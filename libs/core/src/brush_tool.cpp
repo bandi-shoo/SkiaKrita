@@ -2,27 +2,33 @@
 /// @brief BrushTool implementation.
 
 #include "core/brush_tool.h"
+#include "core/brush_command.h"
 #include "core/document.h"
 
 namespace skiakrita::core {
 
-// ── Pimpl ────────────────────────────────────────────────────────
+// -- Pimpl ----------------------------------------------------------------
 struct BrushTool::Impl {
-    BrushSettings   settings;
-    BrushStroke     currentStroke;
-    bool            drawing = false;
-    RenderCallback  renderCb;
+    BrushSettings          settings;
+    BrushStroke            currentStroke;
+    bool                   drawing = false;
+    RenderCallback         renderCb;
+    CommandCallback        commandCb;
+    std::vector<uint8_t>   pixelSnapshot;
 };
 
-// ── Lifetime ─────────────────────────────────────────────────────
+// -- Lifetime -------------------------------------------------------------
 BrushTool::BrushTool()  : m_impl(std::make_unique<Impl>()) {}
 BrushTool::~BrushTool()                                    = default;
 BrushTool::BrushTool(BrushTool&&) noexcept                 = default;
 BrushTool& BrushTool::operator=(BrushTool&&) noexcept      = default;
 
-// ── Tool interface ───────────────────────────────────────────────
+// -- Tool interface -------------------------------------------------------
 void BrushTool::onMousePress(Document& doc, const MouseEvent& e) {
     if (e.button != MouseButton::Left) return;
+
+    // Snapshot layer pixels before any drawing for undo
+    m_impl->pixelSnapshot = doc.activeLayer().pixels();
 
     m_impl->drawing = true;
     m_impl->currentStroke = {};
@@ -44,7 +50,7 @@ void BrushTool::onMouseMove(Document& doc, const MouseEvent& e) {
     const Point prev = m_impl->currentStroke.points.back();
     m_impl->currentStroke.addPoint(e.x, e.y, e.pressure);
 
-    // Render only the new segment (2 points)
+    // Render only the new segment
     if (m_impl->renderCb) {
         BrushStroke segment;
         segment.settings = m_impl->settings;
@@ -54,15 +60,23 @@ void BrushTool::onMouseMove(Document& doc, const MouseEvent& e) {
     }
 }
 
-void BrushTool::onMouseRelease(Document& /*doc*/, const MouseEvent& /*e*/) {
+void BrushTool::onMouseRelease(Document& doc, const MouseEvent& /*e*/) {
     if (!m_impl->drawing) return;
     m_impl->drawing = false;
-    // Stroke complete – could push to CommandHistory for undo here.
+
+    // Create undoable command with before/after pixel snapshots
+    if (m_impl->commandCb && !m_impl->pixelSnapshot.empty()) {
+        auto cmd = std::make_unique<BrushStrokeCommand>(
+            doc.activeLayer(), std::move(m_impl->pixelSnapshot));
+        cmd->captureAfter();
+        m_impl->commandCb(std::move(cmd));
+    }
+    m_impl->pixelSnapshot.clear();
 }
 
 std::string BrushTool::name() const { return "Brush"; }
 
-// ── Accessors ────────────────────────────────────────────────────
+// -- Accessors ------------------------------------------------------------
 BrushSettings&       BrushTool::settings()       { return m_impl->settings; }
 const BrushSettings& BrushTool::settings() const { return m_impl->settings; }
 
@@ -70,6 +84,10 @@ bool BrushTool::isDrawing() const { return m_impl->drawing; }
 
 void BrushTool::setRenderCallback(RenderCallback cb) {
     m_impl->renderCb = std::move(cb);
+}
+
+void BrushTool::setCommandCallback(CommandCallback cb) {
+    m_impl->commandCb = std::move(cb);
 }
 
 } // namespace skiakrita::core
