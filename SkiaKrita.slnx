@@ -10,5 +10,6 @@
 
   <Folder Name="/apps/">
     <Project Path="apps/krita_shell/krita_shell.vcxproj" Id="D9A73C5A-6F4E-48B1-AE5C-3C7F9A1B2D4E" />
+    <Project Path="apps/krita_gui/krita_gui.vcxproj" Id="A1B2C3D4-5E6F-7890-ABCD-EF1234567890" />
   </Folder>
 </Solution>

@@ -1,6 +1,6 @@
-@startuml SkiaKrita Target Architecture
+@startuml SkiaKrita GUI Architecture
 
-title SkiaKrita – Target Architecture (Goal)
+title SkiaKrita – GUI Architecture
 skinparam componentStyle rectangle
 skinparam packageStyle frame
 
@@ -10,9 +10,15 @@ legend right
 endlegend
 
 package "apps/krita_gui" <<Win32 platform>> {
-    [WinMain]      <<entry point>>
-    [App]          <<controller>>
-    [Win32Window]  <<HWND + message loop>>
+    [WinMain]        <<entry point>>
+    [App]            <<controller>>
+    [Win32Window]    <<HWND + message loop>>
+
+    note bottom of [Win32Window]
+      WM_PAINT   → composite → StretchDIBits
+      WM_MOUSE*  → MouseEvent → Tool
+      WM_SIZE    → resize callback
+    end note
 }
 
 package "apps/krita_shell" <<Console>> {
@@ -25,7 +31,6 @@ package "libs/core" <<Pure C++20>> {
     [Brush Engine]
     [Command / Undo]
     [Selection]
-    [Color Management]
 
     package "Input / Tool" {
         [MouseEvent]  <<value type>>
@@ -37,11 +42,16 @@ package "libs/core" <<Pure C++20>> {
 package "libs/graphics_skia" <<Pure C++20 interface>> {
     [SkiaContext]  <<test patterns>>
     [Renderer]     <<composite + strokes>>
-    [GPU Backend]  <<Skia impl – future>>
+
+    note bottom of [Renderer]
+      compositeDocument()
+      getCompositeBuffer()   ← raw pixels for window
+      renderBrushStroke()
+    end note
 }
 
 package "External" {
-    [Skia]      <<third-party>>
+    [Skia]   <<third-party>>
     [Win32 API] <<OS>>
 }
 
@@ -52,31 +62,20 @@ package "External" {
 [App]          --> [BrushTool]      : active tool
 [App]          --> [Renderer]       : composite + blit
 
-' ── CLI shell ──
-[main.cpp]     --> [Document Model] : uses
-[main.cpp]     --> [SkiaContext]    : test patterns
-[main.cpp]     --> [Renderer]       : composite demo
-
 ' ── Event flow ──
 [Win32Window]  ..> [MouseEvent]     : translates WM_* →
 [App]          --> [Tool]           : dispatches events
 
 ' ── Rendering pipeline ──
 [BrushTool]    --> [Brush Engine]   : builds strokes
+[BrushTool]    ..> [Renderer]       : render callback (via App)
 [Renderer]     --> [Document Model] : reads layers
 [Renderer]     --> [Skia]           : raster ops
 [Win32Window]  --> [Win32 API]      : StretchDIBits
 
 ' ── Core relationships ──
 [Document Model] --> [Layer System]
-[Document Model] --> [Command / Undo]
 [BrushTool]      --|> [Tool]
 [Tool]           --> [MouseEvent]
-[Selection]      --> [Renderer]     : mask rendering
-[Color Management] --> [Renderer]   : color spaces
-
-@enduml
-[Raster Backend] --> [Skia]
-[GPU Backend]    --> [Skia]
 
 @enduml

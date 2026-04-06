@@ -1,43 +1,31 @@
 # SkiaKrita – Roadmap & Next Steps
-# Updated: PR #2 Core Model
+# Updated: PR #3 Win32 GUI
 
 current_state:
   description: >
-    Core model implemented: Document, Layer, BrushStroke, Command/Undo,
-    Selection, Color types in libs/core (pure C++20).  Renderer in
-    libs/graphics_skia composites layers and renders brush strokes via Skia.
-    krita_shell demonstrates the full pipeline: create document → add layers
-    → brush stroke → composite → PNG export.
-  milestone: "PR #2 – Core Document Model & Renderer"
+    Win32 GUI shell fully wired.  krita_gui opens an 800×600 window,
+    composites the Document via Renderer, blits via StretchDIBits.
+    Mouse events translate to MouseEvent → BrushTool → real-time
+    brush strokes on the active layer.  Core model (Document, Layer,
+    BrushStroke, Command/Undo, Selection, Tool, BrushTool) is pure
+    C++20.  All Skia usage confined to graphics_skia (pimpl).
+  milestone: "PR #3 – Win32 GUI Shell"
   implemented:
-    - "Solution structure: apps/krita_shell, libs/core, libs/graphics_skia"
-    - "vcpkg manifest mode with Skia dependency"
-    - "Directory.Build.props for shared build settings (C++20, /W4, Unicode)"
-    - "SkiaContext: raster surface, test pattern draw, PNG snapshot"
-    - "core::Version compile-time and run-time info"
-    - "core::Color value type + BlendMode enum"
-    - "core::Layer with pixel buffer, visibility, opacity, blend mode (pimpl)"
-    - "core::Document with layer stack management (add, remove, move, active)"
-    - "core::BrushStroke / BrushSettings data model"
-    - "core::CommandHistory with undo/redo stacks"
-    - "core::Selection with rect selection and alpha mask"
-    - "graphics::Renderer: layer compositing, brush stroke rendering, PNG export"
-    - "UML documentation (PlantUML .puml) + Python SVG generator"
-    - "README with build / UML / directory docs"
+    - "apps/krita_gui: WinMain, App controller, Win32Window (HWND wrapper)"
+    - "Win32Window: WM_PAINT → composite blit, WM_MOUSE → BrushTool, WM_SIZE"
+    - "core::MouseEvent, core::Tool (abstract), core::BrushTool (concrete)"
+    - "BrushTool: per-segment RenderCallback → Renderer::renderBrushStroke"
+    - "Renderer::getCompositeBuffer() zero-copy pixel view for StretchDIBits"
+    - "gui.puml: GUI-specific architecture diagram"
+    - "apps/krita_shell: console pipeline demo (unchanged)"
+    - "All previous core + graphics_skia implementations"
 
 next_task_candidates:
-  - id: color-management
-    title: "Color space / management in core"
+  - id: command-implementations
+    title: "Concrete Command implementations + wired undo"
     description: >
-      Implement core::ColorSpace, ICC profile support, color-managed pipeline.
-      Integrate with SkiaContext color space handling.
-    priority: high
-
-  - id: render-tests
-    title: "Pixel-level rendering regression tests"
-    description: >
-      Golden-image based tests: render known scenes, compare output PNGs
-      against reference images.  Integrate with CTest or VS Test Explorer.
+      BrushStrokeCommand (pixel snapshot for undo), LayerAddCommand,
+      LayerRemoveCommand.  Wire Ctrl+Z / Ctrl+Y in krita_gui.
     priority: high
 
   - id: brush-engine-advanced
@@ -47,38 +35,40 @@ next_task_candidates:
       soft/hard brush profiles, smudge brush.
     priority: high
 
-  - id: command-implementations
-    title: "Concrete Command implementations"
+  - id: color-management
+    title: "Color space / management in core"
     description: >
-      BrushStrokeCommand (with pixel snapshot for undo), LayerAddCommand,
-      LayerRemoveCommand, etc.  Wire into CommandHistory.
+      Implement core::ColorSpace, ICC profile support, color-managed pipeline.
     priority: high
+
+  - id: render-tests
+    title: "Pixel-level rendering regression tests"
+    description: >
+      Golden-image based tests with CTest / VS Test Explorer.
+    priority: medium
 
   - id: ci-pipeline
     title: "GitHub Actions CI (Windows)"
     description: >
-      Automated build + test on push/PR.  vcpkg binary caching for speed.
+      Automated build + test on push/PR.  vcpkg binary caching.
     priority: medium
 
   - id: input-abstraction
-    title: "Tablet / stylus input abstraction"
+    title: "Tablet / stylus input (WM_POINTER / Ink API)"
     description: >
-      Platform-independent input layer in libs/core for pressure, tilt, etc.
-      Windows implementation via WM_POINTER / Ink API.
+      Pressure & tilt via WM_POINTER in Win32Window.
     priority: medium
 
-  - id: gui-shell-win32
-    title: "Win32 window shell with Skia rendering"
+  - id: gui-toolbar
+    title: "Minimal toolbar / color picker in krita_gui"
     description: >
-      Replace console shell with a minimal Win32 HWND that hosts a
-      Skia raster or GPU surface.  Keep GUI code isolated in apps/.
+      Add brush size slider, color picker, layer list panel.
     priority: medium
 
   - id: macos-port
     title: "macOS build & shell (Cocoa / Metal)"
     description: >
-      Verify libs/core and libs/graphics_skia compile on macOS (Clang).
-      Add a Cocoa application shell in apps/.
+      Verify libs/ compile on macOS.  Add Cocoa application shell.
     priority: low
 
 definition_of_done:

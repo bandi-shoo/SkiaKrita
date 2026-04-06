@@ -97,6 +97,21 @@ bool Renderer::compositeDocument(const core::Document& doc) {
     return true;
 }
 
+// ── Composite buffer access ──────────────────────────────────────
+CompositeBuffer Renderer::getCompositeBuffer() const {
+    CompositeBuffer buf;
+    if (!m_impl->compositeSurface) return buf;
+
+    SkPixmap pixmap;
+    if (m_impl->compositeSurface->peekPixels(&pixmap)) {
+        buf.data   = pixmap.addr();
+        buf.width  = pixmap.width();
+        buf.height = pixmap.height();
+        buf.stride = pixmap.rowBytes();
+    }
+    return buf;
+}
+
 // ── Brush stroke rendering ───────────────────────────────────────
 void Renderer::renderBrushStroke(core::Layer& layer,
                                  const core::BrushStroke& stroke) {
